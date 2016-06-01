@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<function id="TScmmAssetsMainInfo" name="资产主台账" data_object_type="1" data_object_name="T_SCMM_ASSETS_MAININFO" up_node="四川-资产管理" field_team="基本信息" form_rows="1" popedomFunctionID="1805627" treeGridRootValue="-1" stretchLevelStr="-1" standingType="1">
+    <subjoin_function business_class="com.hhwy.scmmnew.zcgl.standingMessage.zcglInfoMessage" user_defined_form_template="TScmmAssetsMainInfo-form.html" user_defined_list_template="" form_return_link="" one_page_rows="16" is_multi="off" is_single="off" is_show_sequence="checked" is_show_navigation="checked" is_show_subtotal="off" is_show_total="off" is_menu_functionId="off" locked_col="" data_filtrate="SHOW_FLAG='1'">
+        <form_script><![CDATA[jQuery.getScript(basePath+"webpdc/js/selects.js");
+jQuery.getScript(basePath+"scmmnew/zcgl/js/standingCommon.js");
+$.ajaxSetup ({
+    cache: false //关闭AJAX相应的缓存
+});
+ //$("input[name='name_CR_NAME_P_ID_DESC']").attr("readonly", "readonly");
+ //$("input[name='CR_NO_P_ID_DESC']").attr("readonly", "readonly");
+
+
+
+//页面初始化调用
+$(function() {
+	var page = $("#curPage").val();
+	if (page == "add") {
+		createNo();
+	}
+
+	$("[name='FIRST_TYPE']").change(getSelectedOption); // 获得选中的元素
+	$("[name='IS_MAIN_DEVICE']").click(disableText);
+	var optionValue = '';
+	if (pObj == null) {
+		optionValue = '9200009561115';
+	} else {
+		optionValue = pObj.FIRST_TYPE;
+	}
+	
+	
+	/**生成各种按钮*/
+	var $btn_unlock = createBtn("解锁",unComfirmData,"btn_unlock");
+	$("#retu").before($btn_unlock);
+	var $btn_lock = createBtn("提交",comfirmData,"btn_lock");
+	$("#btn_update").after($btn_lock);
+	var $btn_createQR = createBtn1("生成二维码",printQrImage,"btn_createQR");
+	$("#retu").before($btn_createQR);
+
+	if (!commonAuthor.hasAuthoritySignByFunction("sign_submit")) {// 提交权限
+		$btn_lock.hide();
+	}
+	if (!commonAuthor.hasAuthoritySignByFunction("sign_unlock")) {// 解锁权限
+		$btn_unlock.hide();
+	}
+	if (!commonAuthor.hasAuthoritySignByFunction("sign_createqr")) {// 生成二维码权限
+		$btn_createQR.hide();
+	}
+	var isComfirm = $("[name='LOCK_STATE']").val();
+	if (isComfirm == "1110872") {//上锁
+		$("#btn_update").hide();
+		$("#btn_delete").hide();
+		$("#btn_print").hide();
+		$btn_lock.hide();
+	} else {//未锁定
+		$("#btn_export").hide();
+		$btn_unlock.hide();
+	}
+	// alert(optionValue);
+	showOption(optionValue);
+	disableText();
+	//$("#standingSaveBtn").attr("onclick", "").click(saveData);
+
+	
+	if (page == "add") {
+		onChangeAssetsType();
+		$("select[name='ASSETS_TYPE']").change(onChangeAssetsType);
+	}
+
+
+
+});
+
+function comfirmData() {
+	// var currentid= pmGetRequestPara("currentid");
+	var url = basePath + "/asset/assetsMainInfo.action?method=isComfirmInfo&currentid=" + currentid;
+	$.ajax({
+		type : "post",
+		url : url,
+		// data: datas,
+		success : function() {
+			new iMsgBox("信息已确认!", "系统提示").showAlert();
+			dynOpenLocation(window.location.href);
+		},
+		error : function(XMLHttpRequest, textStatus) {
+			_error = new Array();
+			_error[0] = "操作异常！" + textStatus;
+			errorMsgWindow();
+			return false;
+		}
+	});
+}
+
+function unComfirmData() {
+	// var currentid= pmGetRequestPara("currentid");
+	var url = basePath + "/asset/assetsMainInfo.action?method=unIsComfirmInfo&currentid=" + currentid;
+	$.ajax({
+		type : "post",
+		url : url,
+		// data: datas,
+		success : function() {
+			// window.location.href=window.location.href+"&comfirmFlag=1120303";
+			// alert(url);
+			new iMsgBox("信息已解锁!", "系统提示").showAlert();
+			dynOpenLocation(window.location.href);
+		},
+		error : function(XMLHttpRequest, textStatus) {
+			_error = new Array();
+			_error[0] = "操作异常！" + textStatus;
+			errorMsgWindow();
+			return false;
+		}
+	});
+}
+
+
+function getSelectedOption() {
+	/* 逐个弹出每个元素 */
+	var options = $("[name='FIRST_TYPE']> option:selected");
+	/* 逐个弹出每个元素，第一种的简写 */
+	$("[name='FIRST_TYPE'] > option:selected").each(function() {
+		// alert('option2: ' + this.value);
+		showOption(this.value);
+	});
+} 
+
+function showOption(option){
+   if(option=='9200009561119'){
+        // 土地房屋建筑物
+         $("#fangwuPara").show();
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#xxsbPara").hide().find(":text").val("");
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").hide().find(":text").val("");
+       }else if(option=='9200009561115'){
+        //交通运输
+        $("#fangwuPara").hide().find(":text").val("");
+       $("#xxsbPara").hide().find(":text").val("");
+        $("#jiaotongPara").show();
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").hide().find(":text").val("");
+    }else if(option=='9200009561116'){
+        //仪器设备
+        $("#fangwuPara").hide().find(":text").val("");
+       $("#xxsbPara").hide().find(":text").val("");
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#yiqiPara").show();
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").hide().find(":text").val("");
+    }else if(option=='9200009561117'){
+        //信息软件
+        $("#fangwuPara").hide().find(":text").val("");
+       $("#xxsbPara").hide().find(":text").val("");
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").show();
+        $("#tzPara").hide().find(":text").val("");
+    }else if(option=='9200009561118'){
+        //特种设备
+         $("#fangwuPara").hide().find(":text").val("");
+        $("#xxsbPara").hide().find(":text").val("");
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").show();
+    }else if(option=='9200009561121'){
+ $("#fangwuPara").hide().find(":text").val("");
+      //信息设备
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#xxsbPara").show();
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").hide().find(":text").val("");
+
+   }
+   else{
+        $("#fangwuPara").hide().find(":text").val("");
+        $("#xxsbPara").hide().find(":text").val("");
+        $("#jiaotongPara").hide().find(":text").val("");
+        $("#yiqiPara").hide().find(":text").val("");
+        $("#xxPara").hide().find(":text").val("");
+        $("#tzPara").hide().find(":text").val("");
+    }
+}
+function disableText(){
+    var checkedValue= $("input[type=radio][name='IS_MAIN_DEVICE'][@checked]").val();
+    if(checkedValue=="1110872"){
+         $("#name_P_ID").val("");
+         $("#P_ID").val("");
+         $("#name_P_ID").attr("disabled","disabled");
+         $(":button[name='P_ID']").attr("disabled","disabled");
+    }else{
+         $("#name_P_ID").removeAttr("disabled");
+         $(":button[name='P_ID']").removeAttr("disabled");
+    }
+}
+//选择供货商
+function getShop(){
+    var showCols='name,shopNo,orgNo,linkman'; //展示项
+    var conCols ='name,shopNo';//查询项
+    var sql = " delete_flag =0";//SQL语句,默认在where加再之后
+    utilList('T_SCMM_SHOP',showCols,conCols,sql,'0','','showShop');//0单选,1多选
+}
+function showShop(list){
+     if(list.length==1){
+        var obj = list[0]; 
+        $("input[name='name_SUPPLIER']").val(obj.name);
+        $("input[name='FACTORY']").val(obj.name);
+        $("#SUPPLIER").val(obj.id);
+        }else{
+        new iMsgBox("请选择一个供货商!", "错误提示").showAlert();
+    }
+}
+
+function selParent(){
+   var showCols='assetsNo,erpDeviceNo,name,useMan'; //展示项
+    var conCols ='assetsNo,name';//查询项
+    var sql = " delete_flag =0 and IS_MAIN_DEVICE='1110872'";//SQL语句,默认在where加再之后
+    if(currentid.value!=""){
+       sql+=" and id!='"+currentid.value+"'";
+    }
+    utilList('T_SCMM_ASSETS_MAININFO',showCols,conCols,sql,'0','','setData');//0单选,1多选
+}
+
+function setData(list){
+    if(list.length==1){
+        var obj = list[0]; 
+        $("input[name='name_P_ID']").val(obj.assetsNo);
+        $("#P_ID").val(obj.id);
+        }else{
+        new iMsgBox("请选择一个主设备!", "错误提示").showAlert();
+    }
+}
+
+function saveStanding(){
+	var win = getRootWindow();
+	var test = new win.DivWin.DivWin("confirm", "250px",  "");
+	test.clickYes = function (){
+		$("[name='LOCK_STATE']").val("1110872");//是
+		win.closeDisabledWindow();
+		test.close();
+		saveData();
+	}
+	test.clickNo = function(){
+		$("[name='LOCK_STATE']").val("1110873");//否
+		win.closeDisabledWindow();
+		test.close();
+		saveData();
+	}
+	test.confirm("是否需要提交锁定？","是","否");
+}
+
+//保存台账调用此方法
+function saveData() {
+	var currentid = pmGetRequestPara("currentid");
+	var assetsNo = $("[name='ASSETS_NO']").val();
+	var erpDeviceNo = $("[name='ERP_DEVICE_NO']").val();
+	var erpAssNo = $("[name='ERP_ASS_NO']").val();
+	var checkedValue = $("input[type=radio][name='IS_MAIN_DEVICE'][@checked]").val();
+	if (checkedValue == '1110872') {
+		$("#P_ID").val("-1");
+	}
+
+	// 验证项目编号是否重复
+	$.ajax({
+		type : "get",
+		url : basePath
+				+ "/asset/assetsMainInfo.action?method=isRepeatNo&assetsNo="
+				+ assetsNo + "&erpDeviceNo=" + erpDeviceNo + "&erpAssNo="
+				+ erpAssNo + "&currentid=" + currentid,
+		async : false,
+		dataType : 'json',
+		success : function(data) {
+			// alert(currentid+"###"+cardNo+"###"+data);
+			if (data == false) {
+				new iMsgBox(
+						"请检查【资产编号】，【ERP设备编号】，【ERP资产编号】输入项，不能和系统中已有资产信息重复！",
+						"填写提示", "e").showAlert();
+				// alert("编号重复");
+			} else {
+				saveStanding_target();
+			}
+		}
+	});
+
+}
+function createNo() {
+	$.ajax({
+		url : basePath + "CodeAction!createZCGLCode.action?type=ZC",
+		dataType : "json",
+		success : function(json) {
+			$("input[name='ASSETS_NO']").val(json.code);
+		}
+	});
+}
+
+function printQrImage(){
+     // var currentid= pmGetRequestPara("currentid");
+     var url=basePath+"/asset/assetsMainInfo.action?method=displayOrCreateQR&currentid="+currentid;
+     //var url=basePath+"scmmnew/zcgl/jsp/displayQrCode.jsp?currentid="+currentid;
+     //window.open(url);
+     openDynWin3(url);
+    // alert(currentid);
+}
+
+function onChangeAssetsType (){
+	var assetsType = updateForm.ASSETS_TYPE.value;//资产类型
+	if (assetsType == "9200009561141") {//非ERP资产
+		$.ajax({
+			url : basePath + "CodeAction!createZCGLCode.action?type=F1900",
+			dataType : "json",
+			success : function(json) {
+				$("input[name='ERP_DEVICE_NO']").val(json.code);
+			}
+		});
+		$.ajax({
+			url : basePath + "CodeAction!createZCGLCode.action?type=F",
+			dataType : "json",
+			success : function(json) {
+				$("input[name='ERP_ASS_NO']").val(json.code);
+			}
+		});
+	}else{
+		$("input[name='ERP_DEVICE_NO']").val("");
+		$("input[name='ERP_ASS_NO']").val("");
+	}
+}]]></form_script>
+        <list_script><![CDATA[jQuery.getScript(basePath+"webpdc/js/select.js");
+
+$.ajaxSetup ({
+    cache: false //关闭AJAX相应的缓存
+});
+//初始化调用
+$(function(){
+	var url =basePath+"asset/assetsMainInfo.action?method=getMainInfo";
+	$("#btn_export").removeAttr("onclick");
+	$("#btn_export").click(
+			function() {
+				var validatePwdUrl = basePath
+						+ "/getUser.action?method=validatePasswordBefore&type=1";
+				showDiv(validatePwdUrl, "validatePwdWindow", "400", "200", "export1");
+				});
+	   $.ajax({
+			type: "post",
+		url: url,
+		//data: datas,
+		success: function(info){    
+	                    //$("#info").text(data);
+	                    var infoHtml = "<tr><td colspan='3' style='text-align:left;color: red;'>"+info+"资产净值为红色的表示需要报废！</td></tr>";
+	                    $("#dataTable").prepend(infoHtml);
+	                    resizeTable();
+	    		},
+		error:function(XMLHttpRequest, textStatus){
+			_error = new Array();
+			_error[0] = "操作异常！"+textStatus;
+			errorMsgWindow();
+			return false;
+		}
+	   });
+	   var $btn_createQR = createBtn1("生成二维码",viewQrCode,"btn_createQR");
+	   var $btn_import = createBtn("导入",validatePwd_import,"btn_import");
+	   $("#btn_export").after($btn_createQR);
+	   $("#btn_export").after($btn_import);
+	   if (!commonAuthor.hasAuthoritySignByFunction("sign_import")) {// 导入权限
+		   $btn_import.hide();
+	   }
+	   if (!commonAuthor.hasAuthoritySignByFunction("sign_createqr")) {// 生成二维码权限
+			$btn_createQR.hide();
+	   }
+	   resizeQueryDiv();
+
+});
+
+
+ 
+function validatePwd_import(){
+	var validatePwdUrl = basePath
+			+ "/getUser.action?method=validatePasswordBefore&type=2";
+	showDiv(validatePwdUrl, "validatePwdWindow", "400", "200",
+			"importFunction");
+
+}
+function importFunction(){
+    var url=basePath+"scmmnew/zcgl/jsp/zcglMainInfoImport.jsp";
+    var testWin = new iMsgBox("bg","资产主台账");
+    testWin.showDialog(appendQuery(url), '400', '200',"popwinImport");
+    getRootWindow().DivWin.callBack=function(){
+       // window.location.href = window.location.href;
+        dynOpenLocation(window.location.href);
+    }
+ }
+
+//列表数据加载后执行的业务方法
+function afterListDataLoad1() {
+  //mygrid.insertColumn(1,"Some text","ch",120,"na","center","center",null,"red");
+   mygrid.insertColumn(0,"<input type=checkbox onclick=checkAll(this)>","ch");
+   mygrid.setColumnMinWidth("100","29");
+
+	//购置价值为0的且不是报废的，提醒报废
+	var orgiValueIndex = 19;//mygrid.getColIndexById("ORIG_VALUE@@@0");
+	var assetsStateIndex = 17;//mygrid.getColIndexById("ITEM_NAME_ASSETS_STATE_DESC@@@0");
+	var rownum = mygrid.getRowsNum();
+	for (i = 0; i < rownum; i++) {
+		var orgiValueCell = mygrid.cells2(i, orgiValueIndex);
+		var assetsStateValue = mygrid.cells2(i, assetsStateIndex).getValue();
+		var str = orgiValueCell.getValue();
+		//alert(i+"="+str);
+		//alert(i+"=="+assetsStateValue );
+		var num = parseFloat(str);
+		if (!isNaN(num) && num == 0 && assetsStateValue != "报废") {
+			var tempStr = "<font color='red'>" + str + "</font>";
+			orgiValueCell.setValue(tempStr);
+		}
+	}
+}
+//列表数据加载后执行的业务方法
+function afterListDataLoad() {
+  //mygrid.insertColumn(1,"Some text","ch",120,"na","center","center",null,"red");
+   mygrid.insertColumn(0,"<input type=checkbox onclick=checkAll(this)>","ch");
+   mygrid.setColumnMinWidth("100","29");
+
+	//购置价值为0的且不是报废的，提醒报废
+	var orgiValueIndex = 19;//mygrid.getColIndexById("ORIG_VALUE@@@0");
+	var assetsStateIndex = 17;//mygrid.getColIndexById("ITEM_NAME_ASSETS_STATE_DESC@@@0");
+	var rownum = mygrid.getRowsNum();
+	for (i = 0; i < rownum; i++) {
+		var orgiValueCell = mygrid.cells2(i, orgiValueIndex);
+                  var assetsStateCell = mygrid.cells2(i, assetsStateIndex);
+
+		var assetsStateValue = mygrid.cells2(i, assetsStateIndex).getValue();
+		var str = orgiValueCell.getValue();
+		//alert(i+"="+str);
+		//alert(i+"=="+assetsStateValue );
+		var num = parseFloat(str);
+                  if (assetsStateValue == "报废") {
+                       mygrid.setRowColor(i+1,"#049CFF");
+
+                    // for(var a=1;a<=rownum;a++){
+                           // mygrid.setRowTextStyle(i+1, "color:blue;"); 
+                      // } 
+                          
+                		//var tempStr = "<font color='red'>" + assetsStateValue + "</font>";
+			//assetsStateCell .setValue(tempStr);
+		}
+
+		if (!isNaN(num) && num == 0 && assetsStateValue != "报废") {
+			var tempStr = "<font color='red'>" + str + "</font>";
+			orgiValueCell.setValue(tempStr);
+		}
+	}
+}
+
+
+function viewQrCode(){
+   var ids="";
+    mygrid.forEachRow(function(id){
+        var isSelect=mygrid.cellById(id,0).getValue();
+        if(isSelect==1){
+            // alert(urlParamScriptArray[id][0]);
+            ids=ids+urlParamScriptArray[id-1][0]+","; 
+        }
+    });
+
+   if(ids.length>1503){
+       new iMsgBox("选择的条数不能超过150条！", "系统提示","e").showAlert();
+   }else if(ids){
+      var url=basePath+"asset/assetsMainInfo.action?method=displayOrCreateQR&ids="+ids;
+       openDynWin3(url);
+   }else{
+       new iMsgBox("请选择要生成的条码!", "系统提示").showAlert();
+    }
+  }]]></list_script>
+        <head_info><![CDATA[]]></head_info>
+        <finish_info><![CDATA[]]></finish_info>
+    </subjoin_function>
+    <sub_functions>
+        <sub_function id="1" name="add" desc="添加" type="query" flag="checked" order_number="1" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=save]]></link>
+        </sub_function>
+        <sub_function id="2" name="update" desc="修改" type="query" flag="off" order_number="2" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=update]]></link>
+        </sub_function>
+        <sub_function id="3" name="delete" desc="删除" type="query" flag="off" order_number="3" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=deleteData]]></link>
+        </sub_function>
+        <sub_function id="4" name="export" desc="导出" type="query" flag="checked" order_number="4" link_mode="location" btn_img="">
+            <link><![CDATA[standing/standingAction.action?method=selectExportListAndPages]]></link>
+        </sub_function>
+        <sub_function id="5" name="print" desc="导入" type="query" flag="off" order_number="5" link_mode="location" btn_img="">
+            <link><![CDATA[action.do]]></link>
+        </sub_function>
+        <sub_function id="6" name="startProcess" desc="发起" type="query" flag="off" order_number="6" link_mode="location" btn_img="">
+            <link><![CDATA[bpm/bpmAction.action?method=startProcess&intanceInfo.processName=]]></link>
+        </sub_function>
+        <sub_function id="7" name="businessButton" desc="生成二维码" type="query" flag="off" order_number="7" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="8" name="delete" desc="删除" type="form" flag="off" order_number="8" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=deleteData]]></link>
+        </sub_function>
+        <sub_function id="9" name="print" desc="打印" type="form" flag="off" order_number="9" link_mode="location" btn_img="">
+            <link><![CDATA[action.do]]></link>
+        </sub_function>
+        <sub_function id="10" name="update" desc="修改" type="detail" flag="checked" order_number="10" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=update]]></link>
+        </sub_function>
+        <sub_function id="11" name="delete" desc="删除" type="detail" flag="checked" order_number="11" link_mode="location" btn_img="">
+            <link><![CDATA[standing/updateAction.action?method=deleteData]]></link>
+        </sub_function>
+        <sub_function id="12" name="export" desc="解锁" type="detail" flag="off" order_number="12" link_mode="location" btn_img="">
+            <link><![CDATA[standing/standingAction.action?method=selectExportListAndPages]]></link>
+        </sub_function>
+        <sub_function id="13" name="print" desc="提交" type="detail" flag="off" order_number="13" link_mode="location" btn_img="">
+            <link><![CDATA[action.do]]></link>
+        </sub_function>
+        <sub_function id="14" name="deBusinessButton" desc="生成二维码" type="detail" flag="off" order_number="14" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="15" name="addRecord" desc="添加行" type="multiRecord" flag="off" order_number="15" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="16" name="deleteRecord" desc="删除行" type="multiRecord" flag="off" order_number="16" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="17" name="selectRecords" desc="选择" type="multiRecord" flag="off" order_number="17" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="18" name="saveMultiRecord" desc="保存" type="multiRecord" flag="off" order_number="18" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+        <sub_function id="19" name="businessButton" desc="自定义按钮" type="multiRecord" flag="off" order_number="19" link_mode="location" btn_img="">
+            <link><![CDATA[##]]></link>
+        </sub_function>
+    </sub_functions>
+    <fields>
+        <field id="1" name="主键" b_name="ID" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="checked" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="1" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="checked" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="3" name="资产编号" b_name="ASSETS_NO" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="checked" d_align="center" d_query_show="checked" d_query_order="2" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="50" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[md.url]]></d_link>
+        </field>
+        <field id="4" name="ERP设备编号" b_name="ERP_DEVICE_NO" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="checked" d_align="center" d_query_show="checked" d_query_order="3" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="150" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="5" name="ERP资产编号" b_name="ERP_ASS_NO" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="checked" d_align="center" d_query_show="checked" d_query_order="4" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="6" name="实物名称" b_name="NAME" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="checked" d_align="center" d_query_show="checked" d_query_order="5" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="7" name="资产分类" b_name="FIRST_TYPE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="下拉选择" d_query_default_value="" d_query="checked" d_align="center" d_query_show="off" d_query_order="6" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="下拉框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '9200009561114' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="61" name="资产分类" b_name="ITEM_NAME_FIRST_TYPE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="FIRST_TYPE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',FIRST_TYPE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="下拉选择" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="7" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="8" name="二级分类" b_name="SECOND_TYPE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="8" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="9" name="三级分类" b_name="THIRD_TYPE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="9" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="10" name="品牌" b_name="BRAND" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="10" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="11" name="规格型号" b_name="TYPE" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="11" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="12" name="使用部门" b_name="USE_UNIT" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="12" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="按钮文本框" e_select_control_name="选择" e_control_address="showOrg('',1,0,'','selectResult')" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[select t.id id, t.organization_name NAME from t_pdc_organization t WHERE t.ID =? and t.DELETE_FLAG = 0]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="66" name="使用部门" b_name="ORGANIZATION_NAME_USE_UNIT_DE" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_PDC_ORGANIZATION" b_associate_field="ID" b_self_field="USE_UNIT" b_ref_field="ORGANIZATION_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_PDC_ORGANIZATION','ORGANIZATION_NAME','ID',USE_UNIT)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="checked" d_align="center" d_query_show="checked" d_query_order="13" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="13" name="保管人" b_name="HAVE_MAN" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="14" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="14" name="领用人" b_name="USE_MAN" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="15" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="15" name="存放位置（含门牌号）" b_name="LOCATION" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="16" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="16" name="资产数量" b_name="ASSSETS_NUM" b_type="NUMBER" b_length="3" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="right" d_query_show="checked" d_query_order="17" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="1" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="17" name="计量单位" b_name="MEASURE_UNIT" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="18" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="18" name="资产状态" b_name="ASSETS_STATE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="下拉选择" d_query_default_value="" d_query="checked" d_align="center" d_query_show="off" d_query_order="19" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="下拉框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '9200009561123' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="19" name="资产来源" b_name="SOURCE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="20" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="下拉框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '9200009561133' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="62" name="资产来源" b_name="ITEM_NAME_SOURCE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="SOURCE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',SOURCE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="21" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="80" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="20" name="资产类型" b_name="ASSETS_TYPE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="下拉选择" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="22" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="下拉框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[like]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '9200009561139' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="64" name="资产类型" b_name="ITEM_NAME_ASSETS_TYPE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="ASSETS_TYPE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',ASSETS_TYPE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="23" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="80" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="63" name="资产状态" b_name="ITEM_NAME_ASSETS_STATE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="ASSETS_STATE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',ASSETS_STATE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="24" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="80" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="21" name="购置价值" b_name="ORIG_VALUE" b_type="NUMBER" b_length="15" b_scale="2" b_isPrimaryKey="off" b_unitFlag="元" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="right" d_query_show="checked" d_query_order="25" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="22" name="资产净值" b_name="NET" b_type="NUMBER" b_length="15" b_scale="2" b_isPrimaryKey="off" b_unitFlag="元" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="right" d_query_show="checked" d_query_order="26" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="23" name="入账日期" b_name="IN_DATE" b_type="DATE" b_length="7" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="27" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="日期控件" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="24" name="购置日期" b_name="BUY_DATE" b_type="DATE" b_length="7" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="28" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="日期控件" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="25" name="供应商" b_name="SUPPLIER" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="29" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="选择" e_control_address="getShop()" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="checked" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.NAME NAME FROM T_SCMM_SHOP t where t.delete_flag='0' and t.id=?]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="65" name="供货商" b_name="NAME_SUPPLIER_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_SCMM_SHOP" b_associate_field="ID" b_self_field="SUPPLIER" b_ref_field="NAME" b_expression="pkg_acc_tools.getnamesbyids('T_SCMM_SHOP','NAME','ID',SUPPLIER)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="30" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="26" name="制造厂商" b_name="FACTORY" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="31" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="27" name="是否重点设备" b_name="IS_POINT_DEV" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="32" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="单选按钮(行显)" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '1110871' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="28" name="是否计量设备" b_name="IS_MEASURE_DEV" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="33" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="单选按钮(行显)" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '1110871' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="29" name="是否主设备" b_name="IS_MAIN_DEVICE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="34" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="单选按钮(行显)" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '1110871' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="30" name="备注" b_name="REMARKS" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="35" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="大文本域" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="31" name="坐落地点" b_name="P_LOCATION" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="36" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="32" name="楼层" b_name="P_FLOOR" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="37" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="33" name="土地面积" b_name="P_LAND_AREA" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="38" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="34" name="建筑面积" b_name="P_BULID_AREA" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="39" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="35" name="土地/产权证号" b_name="P_CERTI_NO" b_type="NVARCHAR2" b_length="50" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="40" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="36" name="所有权人" b_name="P_OWNERSHIP" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="41" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="37" name="用途" b_name="P_USE" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="42" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="38" name="车牌号" b_name="P_CAR_NO" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="43" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="39" name="发动机号" b_name="P_ENGIEN_NO" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="44" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="40" name="行驶里程" b_name="P_DISTANCE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="45" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="41" name="出厂日期" b_name="P_OUT_DATE" b_type="DATE" b_length="7" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="46" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="日期控件" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="42" name="出厂编号(交通运输)" b_name="P_OUT_NO_TRA" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="47" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="43" name="使用实验室" b_name="P_LABORATORY" b_type="NVARCHAR2" b_length="700" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="48" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="复选框(列显)" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[SELECT t.id, t.item_name NAME FROM t_ctl_dictionary t WHERE parent_id = '9200009605241' AND t.delete_flag = '0']]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="44" name="服务器数量" b_name="P_SERVER_NUM" b_type="NUMBER" b_length="3" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="right" d_query_show="off" d_query_order="49" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="45" name="IP地址" b_name="P_IP_ADDRESS" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="50" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="46" name="出厂编号(特种设备)" b_name="P_OUT_NO_SPE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="51" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="48" name="备用字段B" b_name="SPARE_B" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="52" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="49" name="备用字段C" b_name="SPARE_C" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="53" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="50" name="备用字段D" b_name="SPARE_D" b_type="NVARCHAR2" b_length="200" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="54" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="51" name="锁定状态" b_name="LOCK_STATE" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="55" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="隐藏域" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="1110873" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="58" name="是否重点设备" b_name="ITEM_NAME_IS_POINT_DEV_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="IS_POINT_DEV" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',IS_POINT_DEV)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="56" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="60" name="是否主设备" b_name="ITEM_NAME_IS_MAIN_DEVICE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="IS_MAIN_DEVICE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',IS_MAIN_DEVICE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="57" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="50" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="59" name="是否计量设备" b_name="ITEM_NAME_IS_MEASURE_DEV_DESC" b_type="NVARCHAR2" b_length="100" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="IS_MEASURE_DEV" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',IS_MEASURE_DEV)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="58" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="50" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="68" name="控制显示标志位" b_name="SHOW_FLAG" b_type="NVARCHAR2" b_length="20" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="59" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="隐藏域" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="1" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="69" name="父设备ID" b_name="P_ID" b_type="NVARCHAR2" b_length="20" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="60" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="按钮文本框" e_select_control_name="选择" e_control_address="selParent()" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="71" name="锁定状态" b_name="ITEM_NAME_LOCK_STATE_DESC" b_type="NVARCHAR2" b_length="100" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="LOCK_STATE" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',LOCK_STATE)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="61" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="50" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="70" name="修改人" b_name="USER_NAME_UPDATE_USER_DESC" b_type="NVARCHAR2" b_length="50" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_PDC_USER" b_associate_field="ID" b_self_field="UPDATE_USER" b_ref_field="USER_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_PDC_USER','USER_NAME','ID',UPDATE_USER)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="62" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="60" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="72" name="项目名称" b_name="PROJECT_NAME" b_type="NVARCHAR2" b_length="50" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="63" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="73" name="资金来源（资本金，成本金）" b_name="FUNDS_SOURCE" b_type="NVARCHAR2" b_length="50" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="64" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="74" name="转固日期" b_name="ZG_DATE" b_type="DATE" b_length="7" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="65" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="checked" e_edit_control_type="日期控件" e_select_control_name="" e_control_address="" e_add_readonly="checked" e_update_readonly="checked" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="76" name="院级实验室" b_name="ITEM_NAME_SCHOOL_LABORATORY_D" b_type="NVARCHAR2" b_length="100" b_scale="" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="T_CTL_DICTIONARY" b_associate_field="ID" b_self_field="SCHOOL_LABORATORY" b_ref_field="ITEM_NAME" b_expression="pkg_acc_tools.getnamesbyids('T_CTL_DICTIONARY','ITEM_NAME','ID',SCHOOL_LABORATORY)" b_deleteName="删除" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="67" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="77" name="院级实验室" b_name="SCHOOL_LABORATORY" b_type="NVARCHAR2" b_length="500" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="" d_align="center" d_query_show="off" d_query_order="200" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="57" name="版本" b_name="VERSION" b_type="NUMBER" b_length="15" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="right" d_query_show="off" d_query_order="68" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="52" name="创建人" b_name="CREATE_USER" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="69" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="60" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="53" name="创建时间" b_name="CREATE_TIME" b_type="DATE" b_length="7" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="70" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="150" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="54" name="修改人" b_name="UPDATE_USER" b_type="NVARCHAR2" b_length="20" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="71" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="55" name="修改时间" b_name="UPDATE_TIME" b_type="DATE" b_length="7" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="checked" d_query_order="72" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="200" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="checked" d_style="" d_list_order_type="desc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+        <field id="56" name="删除标记" b_name="DELETE_FLAG" b_type="NVARCHAR2" b_length="2" b_scale="0" b_isPrimaryKey="off" b_unitFlag="" b_isParam="off" b_param_ref="request" b_alias="" b_ref_table="" b_associate_field="" b_self_field="" b_ref_field="" b_expression="" b_deleteName="" d_unite_table_header="" d_query_lable="" d_query_control="文本输入框" d_query_default_value="" d_query="off" d_align="center" d_query_show="off" d_query_order="73" d_query_highlight="off" d_detail_show="off" d_detail_highlight="off" d_line_width="100" d_format="defaultFormat" d_ico="off" d_title="" d_list_precision="2" d_list_order="off" d_style="" d_list_order_type="asc" d_link_type="location" d_link_mode="" d_filtrate="off" d_statistics="off" d_associate_change="" e_form_show="off" e_edit_control_type="文本框" e_select_control_name="" e_control_address="" e_add_readonly="off" e_update_readonly="off" e_default_value="" e_notnull_type="off" e_fill_title="" e_field_team="基本信息" e_self_validate="" e_ref_subtab="" e_ref_subtab_pk="" e_ref_subtab_value_field="" e_form_style="" e_popedom_control="">
+            <d_query_condition><![CDATA[=]]></d_query_condition>
+            <d_query_list_sql><![CDATA[]]></d_query_list_sql>
+            <d_link><![CDATA[]]></d_link>
+        </field>
+    </fields>
+</function>
