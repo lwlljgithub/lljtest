@@ -1,0 +1,19 @@
+declare
+      cursor   c_obj is  select  T.OBJECT_TYPE,T.OBJECT_NAME          from user_objects  t  ;
+      v_sql varchar2(100);
+begin
+     for c_obj_i in c_obj loop
+      if    c_obj_i.object_type not in('INDEX','LOB') then
+       begin
+        v_sql :='drop '||c_obj_i.object_type||' ' ||c_obj_i.object_name;
+        if  c_obj_i.object_type='TABLE' then
+          v_sql :=v_sql||' CASCADE CONSTRAINTS PURGE';
+        end if;
+        execute immediate  v_sql;  
+        exception when others then
+              dbms_output.put_line(v_sql||'  ---'||sqlerrm);
+        end;
+
+      end if;      
+     end loop;
+end;

@@ -1,0 +1,2 @@
+with a as  (select * from t_pdc_user) 
+select * from a¡¡
