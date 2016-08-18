@@ -1,0 +1,9 @@
+1 sqlplus 登陆
+conn scmm_llj/scmm_llj@ynzl as sysdba;
+
+2 create directory expdp as 'D:\';
+
+3 grant read,write on directory expdp to public;
+
+
+4 然后在cmd 窗口执行 expdp system/manager@ynzl directory=expdp dumpfile=daochu.dmp full=y version=10.2.0
