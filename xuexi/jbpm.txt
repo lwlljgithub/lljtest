@@ -1,0 +1,374 @@
+http://zwllxs.iteye.com/blog/726343
+
+
+首页 资讯 精华 论坛 问答 博客 专栏 群组 更多 ▼ 
+知识库 搜索 您还未登录 ! 登录 注册 .七彩阳光java博客微博相册收藏留言关于我  .zwllxs 
+JBPM4.4与SSH2之整合 博客分类： JBPM
+JBPMHibernateSpringTomcatfckeditor.JBPM4.4与SSH2之整合（附完整源码） 
+    这是我来到这世上二十多年来，第二次写博客啊。哈哈 
+    这些天，想着把jbpm4.4与ssh2整合一下，由于之前从来没用过jbpm，也不知道各版本之间会有什么差异（经过网上的收集对比，还真有些差异），整合起来，还真是有些步履艰难。收集了不少别人的整合资料和源码，但是最终不是这里不行，就是那里不行。经过一番努力，绕着转了个大圈，最终，还是自己搞出来了，原来它是如此的简单，特奉献出整合经验，避免大家再走我的老路，得不偿失。 
+     想要让JBPM4.4与SSH2进行整合，首先肯定是要先让SSH2整合好，那是必须的。关于SSH2的整合，我在这就不多费口舌了，网上资料一大把。 
+     整合前，很有必要先对JBPM有个感性的认识。JBPM在管理流程时，是需要数据库表的支持的，因为底层的逻辑有那么复杂。默认下载下来的配置，使用的是内存数据库。实际应用中，我们就需要连接到我们的数据库里来。所以要事先建好相关的表，相应的sql文件在\jbpm-4.4\install\src\db下，当然，你也可以使用hibernate的hibernate.hbm2ddl.auto自动建表，本人建议自己用建表语句，会少很多麻烦（本人在此处可没少碰麻烦）。 
+     研究过JBPM的人都知道，JBPM在操作流程时，一切都是基于ProcessEngine对象，所以整合的思路很简单，只要我们能让Spring创建出ProcessEngine，整合就算是迈出一大步，我们先在spring配置文件（applicationContext.xml）里加入如下代码： 
+
+
+Java代码  
+1.<!--jbpm4.4工作流  -->   
+2.<bean id="springHelper" class="org.jbpm.pvm.internal.processengine.SpringHelper">   
+3.        <property name="jbpmCfg" value="spring-jbpm4.cfg.xml" />   
+4.</bean>   
+5.<bean id="processEngine" factory-bean="springHelper"  factory-method="createProcessEngine" />  
+<!--jbpm4.4工作流  -->
+<bean id="springHelper" class="org.jbpm.pvm.internal.processengine.SpringHelper">
+		<property name="jbpmCfg" value="spring-jbpm4.cfg.xml" />
+</bean>
+<bean id="processEngine" factory-bean="springHelper"  factory-method="createProcessEngine" />在这里创建processEngine 对象，在这里用到spring-jbpm4.cfg.xml，它的内容如下: 
+
+
+Java代码  
+1.  
+2.<?xml version="1.0" encoding="UTF-8"?>   
+3.<jbpm-configuration>   
+4.    <process-engine-context>   
+5.        <string name="spring.cfg" value="spring-jbpm4.xml" />   
+6.    </process-engine-context>   
+7.    <import resource="jbpm.default.cfg.xml" />   
+8.    <import resource="jbpm.tx.spring.cfg.xml" />   
+9.    <import resource="jbpm.jpdl.cfg.xml" />   
+10.    <import resource="jbpm.bpmn.cfg.xml" />   
+11.    <import resource="jbpm.identity.cfg.xml" />   
+12.    <import resource="jbpm.businesscalendar.cfg.xml" />   
+13.    <import resource="jbpm.console.cfg.xml" />   
+14.    <!--     
+15.    <import resource="jbpm.jobexecutor.cfg.xml" />   
+16.    -->   
+17.</jbpm-configuration>  
+
+<?xml version="1.0" encoding="UTF-8"?>
+<jbpm-configuration>
+	<process-engine-context>
+    	<string name="spring.cfg" value="spring-jbpm4.xml" />
+  	</process-engine-context>
+	<import resource="jbpm.default.cfg.xml" />
+	<import resource="jbpm.tx.spring.cfg.xml" />
+	<import resource="jbpm.jpdl.cfg.xml" />
+	<import resource="jbpm.bpmn.cfg.xml" />
+	<import resource="jbpm.identity.cfg.xml" />
+	<import resource="jbpm.businesscalendar.cfg.xml" />
+	<import resource="jbpm.console.cfg.xml" />
+	<!--  
+	<import resource="jbpm.jobexecutor.cfg.xml" />
+	-->
+</jbpm-configuration>
+   看到这里，或许你又会问：spring-jbpm4.cfg.xml里又引用了那么多的文件，这些文件在哪里？这些文件，你不用担心，他们都在jbpm.jar文件里，这不是我们管的事。 
+  到这里，算完了吗？还没有！前面说过，JBPM要数据库表的支持才能工作，JBPM又是使用Hibernate操作数据库，就不免要配置Hibernate的表与实体的映射文件，如下： 
+
+Java代码  
+1.<property name="mappingLocations">   
+2.   <list>   
+3.    <value>classpath:jbpm.execution.hbm.xml</value>   
+4.    <value>classpath:jbpm.history.hbm.xml</value>   
+5.    <value>classpath:jbpm.identity.hbm.xml</value>   
+6.    <value>classpath:jbpm.repository.hbm.xml</value>   
+7.    <value>classpath:jbpm.task.hbm.xml</value>   
+8.   </list>   
+9.</property>  
+<property name="mappingLocations">
+   <list>
+	<value>classpath:jbpm.execution.hbm.xml</value>
+	<value>classpath:jbpm.history.hbm.xml</value>
+	<value>classpath:jbpm.identity.hbm.xml</value>
+	<value>classpath:jbpm.repository.hbm.xml</value>
+	<value>classpath:jbpm.task.hbm.xml</value>
+   </list>
+</property>
+
+我这里直接使用的spring管理，没使用hibernate.cfg.xml，本人没试过这种方式，读者可以自行试一下，最好把试验结果贴到此处来 
+   看到这里，或许你又会问，上面的这些*.hbm.xml文件又是哪来的？放心，这些，又是在jbpm.jar里的，我们只管加载就行。 
+    哈哈，到此，整合所需要做的配置，就是这些了，关键一步走完了，是不是很简单呢？ 
+   下面一步，就是jar包的添加，如果你已经整合了SSH2，那么你只需要再添加jbpm.jar, juel-api.jar，juel-engine.jar，juel-impl.jar，mail.jar即可，本人所有的jar包列表如下(包括一些其它的jar包，此仅作参考)： 
+
+Java代码  
+1.antlr-2.7.6.jar   
+2.aopalliance-1.0.jar   
+3.aspectjrt.jar   
+4.aspectjweaver.jar   
+5.cglib-nodep-2.1_3.jar   
+6.classworlds-1.1.jar   
+7.common-annotations.jar   
+8.commons-beanutils-1.7.0.jar   
+9.commons-chain-1.1.jar   
+10.commons-codec.jar   
+11.commons-collections-3.1.jar   
+12.commons-dbcp.jar   
+13.commons-digester-1.8.jar   
+14.commons-fileupload.jar   
+15.commons-io.jar   
+16.commons-lang.jar   
+17.commons-logging-api-1.1.jar   
+18.commons-pool.jar   
+19.commons-validator-1.3.0.jar   
+20.dom4j-1.6.1.jar   
+21.dwr.jar   
+22.ehcache-1.2.3.jar   
+23.ejb3-persistence.jar   
+24.ezmorph-1.0.4.jar   
+25.fckeditor-2.4.1(fckeditor).jar   
+26.freemarker-2.3.8.jar   
+27.hibernate-annotations.jar   
+28.hibernate-cglib-repack-2.1_3.jar   
+29.hibernate-commons-annotations.jar   
+30.hibernate-entitymanager.jar   
+31.hibernate3.jar   
+32.javassist-3.4.GA.jar   
+33.jaxen-1.1-beta-7.jar   
+34.jbpm.jar   
+35.json-20090211.jar   
+36.json-lib-2.2.2-jdk15.jar   
+37.jsonplugin-0.33.jar   
+38.jstl.jar   
+39.jta-1.1.jar   
+40.juel-api.jar   
+41.juel-engine.jar   
+42.juel-impl.jar   
+43.jxl.jar   
+44.log4j-1.2.15.jar   
+45.mail.jar   
+46.mysql-connector-java-3.1.13-bin.jar   
+47.ognl-2.6.11.jar   
+48.oro-2.0.8.jar   
+49.plexus-container-default-1.0-alpha-10.jar   
+50.plexus-utils-1.2.jar   
+51.sitemesh-2.2.1.jar   
+52.slf4j-api-1.5.2.jar   
+53.slf4j-log4j12.jar   
+54.spring.jar   
+55.standard.jar   
+56.struts2-core-2.0.14.jar   
+57.struts2-spring-plugin-2.0.14.jar   
+58.urlrewrite-2.6.0.jar   
+59.xml-apis-1.0.b2.jar   
+60.xwork-2.0.7.jar  
+antlr-2.7.6.jar
+aopalliance-1.0.jar
+aspectjrt.jar
+aspectjweaver.jar
+cglib-nodep-2.1_3.jar
+classworlds-1.1.jar
+common-annotations.jar
+commons-beanutils-1.7.0.jar
+commons-chain-1.1.jar
+commons-codec.jar
+commons-collections-3.1.jar
+commons-dbcp.jar
+commons-digester-1.8.jar
+commons-fileupload.jar
+commons-io.jar
+commons-lang.jar
+commons-logging-api-1.1.jar
+commons-pool.jar
+commons-validator-1.3.0.jar
+dom4j-1.6.1.jar
+dwr.jar
+ehcache-1.2.3.jar
+ejb3-persistence.jar
+ezmorph-1.0.4.jar
+fckeditor-2.4.1(fckeditor).jar
+freemarker-2.3.8.jar
+hibernate-annotations.jar
+hibernate-cglib-repack-2.1_3.jar
+hibernate-commons-annotations.jar
+hibernate-entitymanager.jar
+hibernate3.jar
+javassist-3.4.GA.jar
+jaxen-1.1-beta-7.jar
+jbpm.jar
+json-20090211.jar
+json-lib-2.2.2-jdk15.jar
+jsonplugin-0.33.jar
+jstl.jar
+jta-1.1.jar
+juel-api.jar
+juel-engine.jar
+juel-impl.jar
+jxl.jar
+log4j-1.2.15.jar
+mail.jar
+mysql-connector-java-3.1.13-bin.jar
+ognl-2.6.11.jar
+oro-2.0.8.jar
+plexus-container-default-1.0-alpha-10.jar
+plexus-utils-1.2.jar
+sitemesh-2.2.1.jar
+slf4j-api-1.5.2.jar
+slf4j-log4j12.jar
+spring.jar
+standard.jar
+struts2-core-2.0.14.jar
+struts2-spring-plugin-2.0.14.jar
+urlrewrite-2.6.0.jar
+xml-apis-1.0.b2.jar
+xwork-2.0.7.jar
+只要你把这些jar包添加，保准能整合成功。 
+我们部署到tomcat跑一下，看是否能成功。哈哈，只要你按照我上面的要求去做，是绝对可以跑起来的（本人用的tomcat 5.5，别的没试过，tomcat 6貌似还得加个东西），跑起来后，我们再做下测试，新建一个action，看代码里能否获取到processEngine对象。 
+
+Java代码  
+1.public class TestAction extends ActionSupport   
+2.{   
+3.    private ProcessEngine processEngine;   
+4.  
+5.    /**  
+6.     * 测试是否整合成功  
+7.     */  
+8.    public String testJbpm()   
+9.    {   
+10.        System.out.println("整合成功");   
+11.        System.out.println("processEngine: "+processEngine);   
+12.        return SUCCESS;   
+13.    }   
+14.       
+15.    public void setProcessEngine(ProcessEngine processEngine)   
+16.    {   
+17.        this.processEngine = processEngine;   
+18.    }   
+19.  
+20.    public ProcessEngine getProcessEngine()   
+21.    {   
+22.        return processEngine;   
+23.    }   
+24.}  
+public class TestAction extends ActionSupport
+{
+    private ProcessEngine processEngine;
+
+    /**
+     * 测试是否整合成功
+     */
+    public String testJbpm()
+    {
+        System.out.println("整合成功");
+        System.out.println("processEngine: "+processEngine);
+        return SUCCESS;
+    }
+    
+    public void setProcessEngine(ProcessEngine processEngine)
+    {
+        this.processEngine = processEngine;
+    }
+
+    public ProcessEngine getProcessEngine()
+    {
+        return processEngine;
+    }
+}
+哈哈。整合完毕！ 
+（附：部署好本源码，访问index.html即可，如果浏览正常，即部署正常 
+  源码下载地址为:http://download.csdn.net/source/2671387 
+  
+  很多朋友要求我把jar包也上传,jar包下载地址为: 
+http://download.csdn.net/source/3084268  
+） 
+
+zwllxs@163.com 
+
+
+
+
+
+4 
+顶5 
+踩.分享到：   .关于freemaker输出值为空的解决 | Eclipse jee的web项目部署路径 2010-08-01 00:28浏览 12747评论(7)分类:编程语言相关推荐参考知识库
+Go知识库 
+161  关注 | 653  收录 机器学习知识库 
+7875  关注 | 1483  收录 Unity3D知识库 
+523  关注 | 261  收录 Docker知识库 
+3480  关注 | 199  收录 .评论
+7 楼 xmllong 2013-03-14   
+你好，看了您的ssh2+jbpm4.4 完整请假流程，现在很想知道你的myflow-min中的保存方法中的保存方法toXml.action,能否发一下此部分的代码，万分感谢！！ 
+6 楼 moonflight 2012-08-20   
+很好，按照你的说法整合好了。并且使用jUnit4进行了测试，测试通过。
+谢谢。
+5 楼 SuperCustomer 2011-11-08   
+写得比较清楚，回去试试看
+4 楼 xiaogangniu 2011-03-11   
+我的流程定义文件写入数据库中是乱码，结果就找不到想要的效果了！
+3 楼 lykm02 2011-01-06   
+为什么需要jbpmtemplate?
+2 楼 niuniu204 2010-12-31   
+整合是成功了！ tomcat也启动成功了！ 
+可是用junit进行单元测试时报错了！ 
+只有把spring中的<bean id="processEngine" factory-bean="springHelper"  factory-method="createProcessEngine" />  注释掉，junit才可以正常进行！ 
+
+求解 
+
+1 楼 wulinshishen 2010-09-16   
+照你的做的整合还是报错了，困惑啊发表评论
+ 您还没有登录,请您登录后再发表评论 
+
+zwllxs
+浏览: 316438 次
+性别: 
+来自: 上海
+
+最近访客 更多访客>>
+qq526470298chiangfaizhangyusu6licenses.文章分类
+■全部博客 (172)
+■工作流 (0)
+■JBPM (4)
+■svn (4)
+■j2me (1)
+■eclipse+MyEclipse (5)
+■freemarker (17)
+■hibernate (7)
+■jdbc (4)
+■javascript (14)
+■mysql (10)
+■dwr (2)
+■web server (3)
+■连接池 (0)
+■架构 (5)
+■数据库 (21)
+■struts2 (9)
+■测试 (2)
+■android (1)
+■tomcat/resin/jboss/apache (9)
+■java (14)
+■ios/ipad (1)
+■spring (12)
+■apache (1)
+■杂谈 (6)
+■jsp (4)
+■webservice (2)
+■linux (6)
+■日志 (1)
+■ant (0)
+■Velocity (1)
+■hybris (2)
+■GIT (1)
+■lucene (1)
+■mybatis (2)
+■lucene&solr等 (1)
+社区版块
+■我的资讯 (0)
+■我的论坛 (37) 
+■我的问答 (0)
+存档分类
+■2016-04 (1)
+■2015-11 (1)
+■2015-10 (2)
+■更多存档...
+最新评论
+wangpenghua： 你好，我使用第一种方法在页面上引用一直报错，使用第二种方法没问 ...
+关于FreeMarker自定义TemplateDirectiveModel 
+herry118423： 你好，我遇到的问题是这样的：de.hybris.platfor ...
+could not translate value expression 'session.catalogversions',hybris 
+phoenix5870： 嗯，这个确实是的。
+批一下 Initializing Spring root WebApplicationContext 
+wangyajin333： 我找了很多资料，终于在您这看到了。谢谢了。顺便说一下：该pro ...
+当ssh框架中hibernate.hbm2ddl.auto=update不起作用时 
+john_smith： [color=orange][/color]sdfsdfsdf ...
+Parameter Maps collection does not contain value for java.util.Map 
+.
+--------------------------------------------------------------------------------
+声明：ITeye文章版权属于作者，受法律保护。没有作者书面许可不得转载。若作者同意转载，必须以超链接形式标明文章原始出处和作者。
+? 2003-2016 ITeye.com. All rights reserved. [ 京ICP证110151号 京公网安备110105010620 ] . 
