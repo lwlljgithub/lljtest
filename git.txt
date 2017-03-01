@@ -1,0 +1,4 @@
+1 cd 
+2 git add appcan.txt
+3 git commit  -m 'ssss'
+4  git push -u origin master
