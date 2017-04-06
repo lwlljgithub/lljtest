@@ -1,0 +1,11 @@
+var fileReq = rootURL + "/mobiles/tBnsYnzlCheckTable.action?method=checkTableFileList&Id=" + Id + "&catogory
+
+=" + catogory + "&pileNum=" + pileNum + "&projectId=" + projectId +"&loginId="+encodeURI(encodeURI(username));
+
+encodeURI(encodeURI(username))在这里要转两次
+
+然后在java 后台 loginId=java.net.URLDecoder.decode(loginId, "utf-8");再转一次
+
+http://192.168.2.149:8080/ftdl/asset/asssertAction.action?method=getResoult&str='ss'
+
+mygrid.setCellTextStyle(i,"color:red;border:1px solid gray;");
