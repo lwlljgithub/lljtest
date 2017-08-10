@@ -1,0 +1,20 @@
+
+Your identification has been saved in /c/Users/Administrator/.ssh/id_rsa.
+Your public key has been saved in /c/Users/Administrator/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:EVvaW8ped+DR2A81x/Wf2+xZoF1QWUPWXr+occMQN98 1041901964@qq.com
+The key's randomart image is:
++---[RSA 2048]----+
+|        . .   .*@|
+|         * . o.BO|
+|        + . + O.B|
+|         o = . *E|
+|        S + + =.*|
+|         . o O *o|
+|          . = o.+|
+|           .   .o|
+|               ..|
++----[SHA256]-----+
+
+
+http://blog.jobbole.com/78960/
