@@ -1,0 +1,8 @@
+
+SELECT t.table_name,
+       t.colUMN_NAME,
+       t.DATA_TYPE || '(' || t.DATA_LENGTH || ')',
+       t1.COMMENTS
+  FROM User_Tab_Cols t, User_Col_Comments t1
+WHERE t.table_name = t1.table_name
+    AND t.column_name = t1.column_name;
