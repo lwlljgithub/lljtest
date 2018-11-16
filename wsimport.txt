@@ -1,0 +1,1 @@
+ wsimport -keep -p com.demo.client -d D:\\16 http://192.168.1.158:8090/cqdky/services/userService?wsdl
