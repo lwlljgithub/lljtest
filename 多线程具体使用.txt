@@ -1,0 +1,31 @@
+1 多线程用在了当主线程提交数据保存的时候，需要向mds同步pdf的 再开启一个线程去同步pdf，这时候主线程不必等待。例如提交表单后直接返回列表 而同步pdf在后台线程执行，等同于打破了原来程序按照顺序执行的效果。
+
+
+	public String getWtrecordList() {
+		//WordToPdfUtils wf=new WordToPdfUtils();
+		//wf.zpdf();
+		TestThread  t=new TestThread();
+		t.test111();
+                //dao.save();
+		}
+
+       public  void test111() {
+		Thread  t1=new Thread(new TestThread());
+   		t1.start();
+		
+		Thread  t2=new Thread(new TestThread());
+		t2.start();
+
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		System.out.println(Thread.currentThread().getName()+"-->我是通过实现接口的线程实现方式！");
+		WordToPdfUtils  w=new WordToPdfUtils();
+		w.zpdf(Thread.currentThread().getName());
+
+		
+	}
