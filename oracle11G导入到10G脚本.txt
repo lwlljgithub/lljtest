@@ -1,0 +1,6 @@
+1先创建  directory=expdp 
+
+
+IMPDP USERID='hsdl/hsdl@HHWYDB as sysdba' remap_schema=hsdl:hsdl directory=expdp dumpfile=HSDL_20190520_PM.DMP  version=10.2.0.3.0  11g 到10G
+
+IMPDP USERID='hsdl/hsdl@HHWYDB as sysdba' remap_schema=hsdl:hsdl directory=expdp dumpfile=HSDL_20190520_PM.DMP    11G to 11g
