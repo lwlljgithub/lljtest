@@ -1,0 +1,6 @@
+1  select * from dba_directories;
+2 将HSDL_20190521_AM.DMP 放到 E:\OracleExp 下面
+
+
+
+3 执行 IMPDP USERID='hsdl_test/hsdl_test@ORCL as sysdba' remap_schema=hsdl:hsdl_test directory=expdpwll dumpfile=HSDL_20190521_AM.DMP version=10.2.0.3.0
